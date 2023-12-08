@@ -31,7 +31,7 @@ public class TransactionCrud implements CrudOperation<Transaction>{
                 Date date = resultSet.getDate("date");
                 String type = resultSet.getString("type");
 
-                Transaction transaction = new Transaction(id, label, amount, date, type);
+                Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.type);
                 transactions.add(transaction);
             }
         }
@@ -48,7 +48,7 @@ public class TransactionCrud implements CrudOperation<Transaction>{
                 statement.setInt(1, transaction.getId());
                 statement.setString(2, transaction.getLabel());
                 statement.setDouble(4, transaction.getAmount());
-                statement.setDate(5, transaction.getDate());
+                statement.setDate(5, (java.sql.Date) transaction.getDate());
                 statement.setString(6, String.valueOf(transaction.getType()));
 
                 int rowsAffected = statement.executeUpdate();
@@ -70,8 +70,8 @@ public class TransactionCrud implements CrudOperation<Transaction>{
             statement.setInt(1, toSave.getId());
             statement.setString(2, toSave.getLabel());
             statement.setDouble(4, toSave.getAmount());
-            statement.setDate(5, toSave.getDate());
-            statement.setString(6, toSave.getType());
+            statement.setDate(5, (java.sql.Date) toSave.getDate());
+            statement.setString(6, String.valueOf(toSave.getType()));
 
             int rowsAffected = statement.executeUpdate();
             if (rowsAffected > 0) {
