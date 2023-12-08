@@ -28,7 +28,7 @@ public class AccountCrud implements CrudOperation<Account>{
                 String transaction = resultSet.getString("transaction");
                 String currency = resultSet.getString("currency");
                 String type = resultSet.getString("type");
-                Account account = new Account(id, name, balance, transaction, currency, type);
+                Account account = new Account();
                 accounts.add(account);
             }
         } catch (SQLException e) {
