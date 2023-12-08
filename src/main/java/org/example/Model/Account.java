@@ -4,8 +4,6 @@ import lombok.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
@@ -21,9 +19,13 @@ public class Account {
     private int id;
     private String name;
     private double balance;
-    private List<Transaction> transactions = new ArrayList<>();
+    private static List<Transaction> transactions = new ArrayList<>();
     private Currency currency;
     private AccountType type;
+
+    public Object getTransactions() {
+        return null;
+    }
 
     public enum AccountType {
         Bank, Cash, MobilMoney
@@ -38,7 +40,7 @@ public class Account {
         transaction.setId(id);
         transaction.setLabel(description);
         transaction.setAmount(amount);
-        transaction.setDate(LocalDateTime.now());
+        transaction.setDate(new Date());
         //transaction.setType(Transaction.TransactionType.CREDIT);
 
         if (transactionType == Transaction.TransactionType.CREDIT) {
