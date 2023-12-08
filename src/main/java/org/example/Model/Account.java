@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
@@ -138,4 +139,11 @@ public class Account {
         transferHistory.setTransferDate(new Date());
     }
 
+
+    public LocalDateTime getCurrentDateTime() {
+        return LocalDateTime.now();
+    }
+
+    LocalDateTime currentDateTime = getCurrentDateTime();
+    System.out.println("Date et heure actuelles : " + currentDateTime);
 }
