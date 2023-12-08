@@ -3,6 +3,7 @@ package org.example.Model;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -11,10 +12,10 @@ public class Transaction {
     private int id;
     private String label;
     private double amount;
-    private LocalDateTime date;
+    private Date date;
     private TransactionType type;
 
     public enum TransactionType {
-        CREDIT, DEBIT
+        CREDIT, type, DEBIT
     }
 }
