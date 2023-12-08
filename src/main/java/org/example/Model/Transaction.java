@@ -2,14 +2,19 @@ package org.example.Model;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Transaction {
     private int id;
-    private long senderAccountId;
-    private long receiverAccountId;
+    private String label;
     private double amount;
-    private String currency;
-    private String description;
+    private LocalDateTime date;
+    private TransactionType type;
+
+    public enum TransactionType {
+        CREDIT, DEBIT
+    }
 }
