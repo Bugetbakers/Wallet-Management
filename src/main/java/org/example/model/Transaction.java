@@ -1,8 +1,7 @@
-package org.example.Model;
+package org.example.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
@@ -14,6 +13,7 @@ public class Transaction {
     private double amount;
     private Date date;
     private TransactionType type;
+    private TransactionCategory category;
 
     public enum TransactionType {
         CREDIT, type, DEBIT
