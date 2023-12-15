@@ -1,6 +1,6 @@
-package org.example.Repository;
+package org.example.repository;
 
-import org.example.Model.Currency;
+import org.example.model.Currency;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
