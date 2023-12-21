@@ -11,8 +11,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//import static org.postgresql.jdbc.PgConnection.ReadOnlyBehavior.transaction;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
