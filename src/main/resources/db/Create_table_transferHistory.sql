@@ -1,8 +1,7 @@
-CREATE TABLE IF NOT EXISTS transferHistory(
+CREATE TABLE IF NOT EXISTS transfertHistory(
     id SERIAL PRIMARY KEY,
     debitTransactionId INT REFERENCES transaction(id),
     creditTransactionId INT REFERENCES transaction(id),
-    amount DOUBLE PRECISION NOT NULL,
     transferDate TIMESTAMP NOT NULL,
     CONSTRAINT validation CHECK ( debitTransactionId IS NOT NULL AND creditTransactionId IS NOT NULL ),
     CONSTRAINT unicity UNIQUE (debitTransactionId, creditTransactionId, transferDate)
