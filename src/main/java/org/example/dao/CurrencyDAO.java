@@ -28,7 +28,7 @@ public class CurrencyDAO implements CrudOperation<Currency>{
                 currencies.add(currency);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return currencies;
     }
@@ -43,7 +43,6 @@ public class CurrencyDAO implements CrudOperation<Currency>{
                     statement.setInt(1, currency.getId());
                     statement.setString(2, currency.getCode());
                     statement.setString(3, currency.getName());
-                    statement.setString(4, currency.getCountry());
 
                     statement.addBatch();
                 }
@@ -51,12 +50,12 @@ public class CurrencyDAO implements CrudOperation<Currency>{
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                e.printStackTrace();
+                throw new RuntimeException();
             } finally {
                 connection.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return toSave;
     }
@@ -68,11 +67,10 @@ public class CurrencyDAO implements CrudOperation<Currency>{
             statement.setInt(1, toSave.getId());
             statement.setString(2, toSave.getCode());
             statement.setString(3, toSave.getName());
-            statement.setString(4, toSave.getCountry());
 
             statement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }
