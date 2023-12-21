@@ -18,7 +18,7 @@ public class Main {
                 connection = DriverManager.getConnection(url, userName, password);
                 System.out.println("Connection Successfully !");
             } catch (SQLException e) {
-                e.printStackTrace();
+                throw new RuntimeException();
             }
         }
         return connection;
