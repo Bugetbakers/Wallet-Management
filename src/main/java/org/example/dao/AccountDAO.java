@@ -54,7 +54,7 @@ public class AccountDAO implements CrudOperation<Account>{
                 );
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }
@@ -66,20 +66,22 @@ public class AccountDAO implements CrudOperation<Account>{
             statement.setInt(1, accountId);
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                int transactionId = resultSet.getInt("id");
+                int id = resultSet.getInt("id");
                 String label = resultSet.getString("label");
                 double amount = resultSet.getDouble("amount");
                 java.sql.Date date = resultSet.getDate("date");
-                List<Transaction.TransactionType> type = new Transaction.TransactionType;
+                String typeString = resultSet.getString("type");
+                Transaction.TransactionType type = Transaction.TransactionType.valueOf(typeString);
 
-                Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.DEBIT);
+                Transaction transaction = new Transaction(id, label, amount, date, type);
                 transactions.add(transaction);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return transactions;
     }
+
 
     @Override
     public List<Account> saveAll(List<Account> toSave) {
