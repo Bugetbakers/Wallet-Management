@@ -13,9 +13,9 @@ public class Transaction {
     private double amount;
     private Date date;
     private TransactionType type;
-    private TransactionCategory category;
+    private int category;
 
     public enum TransactionType {
-        CREDIT, type, DEBIT
+        CREDIT, DEBIT
     }
 }
