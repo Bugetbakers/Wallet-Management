@@ -1,7 +1,6 @@
 package org.example.dao;
 
 import org.example.model.Transaction;
-import org.example.model.Transaction.TransactionType;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,17 +28,23 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 double amount = resultSet.getDouble("amount");
                 Date date = resultSet.getDate("date");
                 String type = resultSet.getString("type");
+                int category = resultSet.getInt("category");
 
-                Transaction transaction = new Transaction(id, label, amount, date, TransactionType.type);
-                transactions.add(transaction);
+                if (Transaction.TransactionType.CREDIT.toString() == type) {
+                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.CREDIT, category);
+                    transactions.add(transaction);
+                } else {
+                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.DEBIT, category);
+                    transactions.add(transaction);
+                }
             }
         }
         return transactions;
     }
 
     public void insertTransaction(Transaction transaction) {
-        if (transaction.getCategory() == null) {
-            throw new IllegalArgumentException("The category is required for a transaction !")
+        if (transaction.getCategory() == 0) {
+            throw new IllegalArgumentException("The category is required for a transaction !");
         }
         String sql = "INSERT INTO transaction (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -47,11 +52,11 @@ public class TransactionDAO implements CrudOperation<Transaction>{
             statement.setDouble(2, transaction.getAmount());
             statement.setDate(3, (java.sql.Date) transaction.getDate());
             statement.setString(4, transaction.getType().name());
-            statement.setInt(5, transaction.getCategory().getId());
+            statement.setInt(5, transaction.getCategory());
 
             statement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
     }
 
@@ -66,7 +71,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 statement.setDouble(2, transaction.getAmount());
                 statement.setDate(3, (java.sql.Date) transaction.getDate());
                 statement.setString(4, transaction.getType().name());
-                statement.setInt(5, transaction.getCategory().getId());
+                statement.setInt(5, transaction.getCategory());
 
                 int rowsAffected = statement.executeUpdate();
                 if (rowsAffected > 0) {
@@ -74,7 +79,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return savedTransactions;
     }
@@ -95,7 +100,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 return toSave;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }
@@ -110,7 +115,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 return toDelete;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }
