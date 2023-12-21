@@ -48,7 +48,7 @@ public class AccountDAO implements CrudOperation<Account>{
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getDouble("balance"),
-                        getTransactionsForAccount(id),
+                        resultSet.getTransactionsForAccount("id"),
                         resultSet.getString("currency"),
                         resultSet.getType()
                 );
@@ -66,18 +66,24 @@ public class AccountDAO implements CrudOperation<Account>{
             statement.setInt(1, accountId);
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                int id = resultSet.getInt("id");
+
+                int transactionId = resultSet.getInt("id");
                 String label = resultSet.getString("label");
                 double amount = resultSet.getDouble("amount");
                 java.sql.Date date = resultSet.getDate("date");
-                String typeString = resultSet.getString("type");
-                Transaction.TransactionType type = Transaction.TransactionType.valueOf(typeString);
+                String type = resultSet.getString("type");
+                int category = resultSet.getInt("category");
+                if (Transaction.TransactionType.DEBIT.toString() == type) {
+                    Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.DEBIT, category);
+                    transactions.add(transaction);
+                } else {
+                    Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.CREDIT, category);
+                    transactions.add(transaction);
+                }
 
-                Transaction transaction = new Transaction(id, label, amount, date, type);
-                transactions.add(transaction);
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return transactions;
     }
