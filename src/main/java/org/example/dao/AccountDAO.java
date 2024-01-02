@@ -33,7 +33,7 @@ public class AccountDAO implements CrudOperation<Account>{
                 accounts.add(account);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return accounts;
     }
@@ -48,7 +48,7 @@ public class AccountDAO implements CrudOperation<Account>{
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getDouble("balance"),
-                        resultSet.getTransactionsForAccount("id"),
+                        resultSet.getTransaction("id"),
                         resultSet.getString("currency"),
                         resultSet.getType()
                 );
@@ -109,12 +109,12 @@ public class AccountDAO implements CrudOperation<Account>{
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                e.printStackTrace();
+                throw new RuntimeException();
             } finally {
                 connection.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return toSave;
     }
@@ -131,7 +131,7 @@ public class AccountDAO implements CrudOperation<Account>{
 
             statement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }
