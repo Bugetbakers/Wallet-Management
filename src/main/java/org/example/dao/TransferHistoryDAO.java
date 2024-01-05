@@ -4,6 +4,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.example.model.EchangeRate;
 import org.example.model.TransferHistory;
 
 public class TransferHistoryDAO {
@@ -21,7 +23,6 @@ public class TransferHistoryDAO {
             ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
-
                 transfers.add(new TransferHistory(
                         resultSet.getInt("id"),
                         resultSet.getInt("debitTransactionId"),
@@ -31,9 +32,12 @@ public class TransferHistoryDAO {
                 ));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return transfers;
     }
 
+    public List<TransferHistory> getTransfersBeforeDate(int accountId, List<EchangeRate> date) {
+        return null;
+    }
 }

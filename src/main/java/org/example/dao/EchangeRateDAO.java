@@ -29,8 +29,12 @@ public class EchangeRateDAO {
                 ));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return echangeRates;
+    }
+
+    public List<EchangeRate> getExchangeRatesForDate(List<EchangeRate> date) {
+        return null;
     }
 }

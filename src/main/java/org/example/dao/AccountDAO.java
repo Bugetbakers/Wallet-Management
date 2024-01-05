@@ -33,7 +33,7 @@ public class AccountDAO implements CrudOperation<Account>{
                 accounts.add(account);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return accounts;
     }
@@ -48,13 +48,13 @@ public class AccountDAO implements CrudOperation<Account>{
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getDouble("balance"),
-                        getTransactionsForAccount(id),
+                        resultSet.getTransaction("id"),
                         resultSet.getString("currency"),
                         resultSet.getType()
                 );
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }
@@ -66,20 +66,28 @@ public class AccountDAO implements CrudOperation<Account>{
             statement.setInt(1, accountId);
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
+
                 int transactionId = resultSet.getInt("id");
                 String label = resultSet.getString("label");
                 double amount = resultSet.getDouble("amount");
                 java.sql.Date date = resultSet.getDate("date");
-                List<Transaction.TransactionType> type = new Transaction.TransactionType;
+                String type = resultSet.getString("type");
+                int category = resultSet.getInt("category");
+                if (Transaction.TransactionType.DEBIT.toString() == type) {
+                    Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.DEBIT, category);
+                    transactions.add(transaction);
+                } else {
+                    Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.CREDIT, category);
+                    transactions.add(transaction);
+                }
 
-                Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.DEBIT);
-                transactions.add(transaction);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return transactions;
     }
+
 
     @Override
     public List<Account> saveAll(List<Account> toSave) {
@@ -101,12 +109,12 @@ public class AccountDAO implements CrudOperation<Account>{
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                e.printStackTrace();
+                throw new RuntimeException();
             } finally {
                 connection.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return toSave;
     }
@@ -123,7 +131,7 @@ public class AccountDAO implements CrudOperation<Account>{
 
             statement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
         return null;
     }

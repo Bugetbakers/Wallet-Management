@@ -1,4 +1,4 @@
-package org.example.Model;
+package org.example.model;
 
 import lombok.*;
 
@@ -11,8 +11,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//import static org.postgresql.jdbc.PgConnection.ReadOnlyBehavior.transaction;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,7 +18,7 @@ public class Account {
     private int id;
     private String name;
     private double balance;
-    private static List<Transaction> transactions = new ArrayList<>();
+    private List<Transaction> transactions = new ArrayList<>();
     private Currency currency;
     private AccountType type;
 
@@ -42,7 +40,6 @@ public class Account {
         transaction.setLabel(description);
         transaction.setAmount(amount);
         transaction.setDate(new Date());
-        //transaction.setType(Transaction.TransactionType.CREDIT);
 
         if (transactionType == Transaction.TransactionType.CREDIT) {
             balance += amount;
@@ -145,5 +142,7 @@ public class Account {
     }
 
     LocalDateTime currentDateTime = getCurrentDateTime();
-    System.out.println("Date et heure actuelles : " + currentDateTime);
+    public void met() {
+        System.out.println("Date et heure actuelles : " + currentDateTime);
+    }
 }

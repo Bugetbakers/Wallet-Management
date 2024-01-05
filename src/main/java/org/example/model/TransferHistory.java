@@ -16,5 +16,12 @@ public class TransferHistory {
     private int creditTransactionId;
     private double amount;
     private Date transferDate;
+    private int transactionDate;
 
+    public TransferHistory(int id, int debitTransactionId, int creditTransactionId, double amount, java.sql.Date date) {
+    }
+
+    public int getTransactionDate() {
+        return transactionDate;
+    }
 }
