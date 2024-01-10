@@ -3,11 +3,9 @@ package org.example.dao;
 import org.example.model.Account;
 import org.example.model.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class AccountDAO implements CrudOperation<Account>{
@@ -43,20 +41,49 @@ public class AccountDAO implements CrudOperation<Account>{
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountId);
             ResultSet resultSet = statement.executeQuery();
+            CurrencyDAO currencyDAO= new CurrencyDAO(connection);
             if (resultSet.next()) {
                 return new Account(
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getDouble("balance"),
-                        resultSet.getTransaction("id"),
-                        resultSet.getString("currency"),
-                        resultSet.getType()
+                        this.findTransactionsByUserId(accountId),
+                        currencyDAO.findCurrencyById(resultSet.getInt("currency")),
+                        Account.AccountType.valueOf(resultSet.getString("type")),
+                        resultSet.getTimestamp("current_date_time").toLocalDateTime()
                 );
             }
         } catch (SQLException e) {
             throw new RuntimeException();
         }
         return null;
+    }
+    public List<Transaction> findTransactionsByUserId(int id_account) throws SQLException{
+        List<Transaction> transactions = new ArrayList<>();
+        String query = "SELECT * FROM transactions WHERE id_account=?";
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, id_account);
+
+             ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String label = resultSet.getString("label");
+                double amount = resultSet.getDouble("amount");
+                Date date = resultSet.getDate("date");
+                String type = resultSet.getString("type");
+                int category = resultSet.getInt("category");
+
+                if (Transaction.TransactionType.CREDIT.toString() == type) {
+                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.CREDIT, category);
+                    transactions.add(transaction);
+                } else {
+                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.DEBIT, category);
+                    transactions.add(transaction);
+                }
+            }
+        }
+        return transactions;
     }
 
     public List<Transaction> getTransactionsForAccount(int accountId) {
