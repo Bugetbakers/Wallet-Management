@@ -28,10 +28,26 @@ public class CurrencyDAO implements CrudOperation<Currency>{
                 currencies.add(currency);
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return currencies;
     }
+
+    public Currency findCurrencyById(int id){
+        String sql= "SELECT * FROM currency WHERE id=?";
+        try(PreparedStatement statement= connection.prepareStatement(sql)){
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                String code = resultSet.getString("code");
+                String name = resultSet.getString("name");
+                return new Currency(id, code, name);
+            }
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
 
     @Override
     public List<Currency> saveAll(List<Currency> toSave) {
@@ -50,7 +66,7 @@ public class CurrencyDAO implements CrudOperation<Currency>{
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                throw new RuntimeException();
+                throw new RuntimeException(e);
             } finally {
                 connection.setAutoCommit(true);
             }
