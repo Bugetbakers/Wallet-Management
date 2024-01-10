@@ -6,7 +6,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,13 +17,10 @@ public class Account {
     private int id;
     private String name;
     private double balance;
+    @Getter
     private List<Transaction> transactions = new ArrayList<>();
     private Currency currency;
     private AccountType type;
-
-    public Object getTransactions() {
-        return null;
-    }
 
     public enum AccountType {
         Bank, Cash, MobilMoney
