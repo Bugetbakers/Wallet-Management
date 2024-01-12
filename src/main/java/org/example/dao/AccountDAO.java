@@ -1,6 +1,7 @@
 package org.example.dao;
 
 import org.example.model.Account;
+import org.example.model.Currency;
 import org.example.model.Transaction;
 
 import java.sql.Connection;
@@ -48,9 +49,14 @@ public class AccountDAO implements CrudOperation<Account>{
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getDouble("balance"),
-                        resultSet.getTransaction("id"),
-                        resultSet.getString("currency"),
-                        resultSet.getType()
+                        List.of(new Transaction()),
+                        new Currency(
+                                resultSet.getInt("id"),
+                                resultSet.getString("code"),
+                                resultSet.getString("name")
+                        ),
+                        Account.AccountType.valueOf(resultSet.getString("type")),
+                        resultSet.getTimestamp("date").toLocalDateTime()
                 );
             }
         } catch (SQLException e) {
