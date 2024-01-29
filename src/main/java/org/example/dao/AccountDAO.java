@@ -4,6 +4,7 @@ import org.example.model.Account;
 import org.example.model.Currency;
 import org.example.model.Transaction;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,29 +13,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AccountDAO implements CrudOperation<Account>{
-    private Connection connection;
+    private Connection connection;  
     public AccountDAO(Connection connection) {
         this.connection = connection;
     }
+
+    private AccountMapper accountMapper = new AccountMapper();
 
     @Override
     public List<Account> findAll() {
         List<Account> accounts = new ArrayList<>();
         String sql = "SELECT * FROM account";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String name = resultSet.getString("name");
-                double balance = resultSet.getDouble("balance");
-                String transaction = resultSet.getString("transaction");
-                String currency = resultSet.getString("currency");
-                String type = resultSet.getString("type");
-                Account account = new Account();
-                accounts.add(account);
-            }
+            accounts = accountMapper.mapResultSetToList(statement.executeQuery());
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return accounts;
     }
@@ -99,30 +92,38 @@ public class AccountDAO implements CrudOperation<Account>{
     public List<Account> saveAll(List<Account> toSave) {
         try {
             connection.setAutoCommit(false);
-            String sql = "INSERT INTO account (id, name, balance, currency, password) VALUES (?,?,?,?,?);";
+            String sql = "INSERT INTO account (id, name, balance, currency, type) VALUES (?,?,?,?,?);";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                for (Account accounts : toSave) {
-                    statement.setInt(1, accounts.getId());
-                    statement.setString(2, accounts.getName());
-                    statement.setDouble(3, accounts.getBalance());
-                    statement.setString(4, String.valueOf(accounts.getCurrency()));
-                    statement.setString(5, accounts.getTransactions().toString());
-                    statement.setString(5, String.valueOf(accounts.getType()));
-
+                for (Account account : toSave) {
+                    setPreparedStatementParams(statement, account);
                     statement.addBatch();
                 }
                 statement.executeBatch();
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                throw new RuntimeException();
+                throw new RuntimeException(e);
             } finally {
                 connection.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return toSave;
+    }
+
+    private void setPreparedStatementParams(PreparedStatement statement, Account account) {
+        try {
+            Field[] fields = Account.class.getDeclaredFields();
+            for (int i = 0; i < fields.length; i++) {
+                Field field = fields[i];
+                field.setAccessible(true);
+                Object value = field.get(account);
+                statement.setObject(i + 1, value);
+            }
+        } catch (SQLException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
