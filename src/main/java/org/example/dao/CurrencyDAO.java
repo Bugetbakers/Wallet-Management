@@ -14,22 +14,20 @@ public class CurrencyDAO implements CrudOperation<Currency>{
     public CurrencyDAO(Connection connection) {
         this.connection = connection;
     }
+
+    private CurrencyMapper currencyMapper = new CurrencyMapper();
+
     @Override
     public List<Currency> findAll() throws SQLException {
         List<Currency> currencies = new ArrayList<>();
         String sql = "SELECT * FROM currency";
+
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String code = resultSet.getString("code");
-                String name = resultSet.getString("name");
-                Currency currency = new Currency(id, code, name);
-                currencies.add(currency);
-            }
+            currencies = currencyMapper.mapResultSetToList(statement.executeQuery());
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
+
         return currencies;
     }
 
