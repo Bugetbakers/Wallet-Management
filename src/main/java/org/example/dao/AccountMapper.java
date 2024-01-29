@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AccontMapper extends reflectMapper<Account>{
+public class AccountMapper extends reflectMapper<Account>{
     public List<Account> mapResultSetToList(ResultSet resultSet) {
         List<Account> accounts = new ArrayList<>();
         try {
