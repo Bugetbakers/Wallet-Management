@@ -41,7 +41,7 @@ public abstract class CrudOperationReflect<T> {
                 if (resultSet.next()) {
                     return mapResultSetToObject(resultSet);
                 } else {
-                    return null; // Or throw an exception if preferred
+                    return null;
                 }
             }
         } catch (Exception e) {
