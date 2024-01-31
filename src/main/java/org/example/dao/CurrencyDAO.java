@@ -40,9 +40,8 @@ public class CurrencyDAO extends CrudOperationReflect<Currency>{
     }
 
     @Override
-    protected Currency setPreparedStatementParameters(PreparedStatement preparedStatement, Currency object) throws SQLException {
+    protected void setPreparedStatementParameters(PreparedStatement preparedStatement, Currency object) throws SQLException {
         preparedStatement.setInt(1, object.getId());
 
-        return object;
     }
 }
