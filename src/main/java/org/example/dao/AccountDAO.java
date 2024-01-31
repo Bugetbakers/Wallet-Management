@@ -36,9 +36,8 @@ public class AccountDAO extends CrudOperationReflect<Account>{
     }
 
     @Override
-    protected Account setPreparedStatementParameters(PreparedStatement preparedStatement, Account object) throws SQLException{
+    protected void setPreparedStatementParameters(PreparedStatement preparedStatement, Account object) throws SQLException{
         preparedStatement.setInt(1, object.getId());
 
-        return object;
     }
 }
