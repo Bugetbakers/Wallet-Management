@@ -10,7 +10,7 @@ public class Main {
         if (connection == null) {
             try {
                 String url = System.getenv("url");
-                String userName = System.getenv("user");
+                String userName = System.getenv("username");
                 String password = System.getenv("password");
                 if (url == null || userName == null || password == null) {
                     throw new IllegalStateException("Please define the url, username and password in the environment variable");

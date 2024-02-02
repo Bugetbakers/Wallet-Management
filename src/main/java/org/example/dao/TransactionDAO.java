@@ -15,29 +15,18 @@ public class TransactionDAO implements CrudOperation<Transaction>{
     public TransactionDAO(Connection connection) {
         this.connection = connection;
     }
+
+    private TransactionMapper transactionMapper = new TransactionMapper();
+
     @Override
     public List<Transaction> findAll() throws SQLException {
         List<Transaction> transactions = new ArrayList<>();
         String query = "SELECT * FROM transactions";
 
-        try (PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String label = resultSet.getString("label");
-                double amount = resultSet.getDouble("amount");
-                Date date = resultSet.getDate("date");
-                String type = resultSet.getString("type");
-                int category = resultSet.getInt("category");
-
-                if (Transaction.TransactionType.CREDIT.toString() == type) {
-                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.CREDIT, category);
-                    transactions.add(transaction);
-                } else {
-                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.DEBIT, category);
-                    transactions.add(transaction);
-                }
-            }
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            transactions = transactionMapper.mapResultsetToList(statement.executeQuery());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
         return transactions;
     }
