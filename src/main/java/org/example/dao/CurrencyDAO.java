@@ -33,44 +33,40 @@ public class CurrencyDAO implements CrudOperation<Currency>{
 
     @Override
     public List<Currency> saveAll(List<Currency> toSave) {
-        try {
+        String sql = "INSERT INTO currency (id, code, name, country) VALUES (?,?,?,?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             connection.setAutoCommit(false);
-            String sql = "INSERT INTO currency (id, code, name, country) VALUES (?,?,?,?);";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                for (Currency currency : toSave) {
-                    statement.setInt(1, currency.getId());
-                    statement.setString(2, currency.getCode());
-                    statement.setString(3, currency.getName());
-
-                    statement.addBatch();
-                }
-                statement.executeBatch();
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw new RuntimeException();
-            } finally {
-                connection.setAutoCommit(true);
+            for (Currency currency : toSave) {
+                statement.setInt(1, currency.getId());
+                statement.setString(2, currency.getCode());
+                statement.setString(3, currency.getName());
+                statement.setString(4, currency.getCountry());
+                statement.addBatch();
             }
+            statement.executeBatch();
+            connection.commit();
         } catch (SQLException e) {
-            throw new RuntimeException();
+            try { connection.rollback(); } catch (SQLException ignored) {}
+            throw new RuntimeException(e);
+        } finally {
+            try { connection.setAutoCommit(true); } catch (SQLException ignored) {}
         }
         return toSave;
     }
 
     @Override
     public Currency save(Currency toSave) {
-        String sql = "INSERT INTO currency (id, code, name, country) VALUES (?,?,?,?);";
+        String sql = "INSERT INTO currency (id, code, name, country) VALUES (?,?,?,?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, toSave.getId());
             statement.setString(2, toSave.getCode());
             statement.setString(3, toSave.getName());
-
+            statement.setString(4, toSave.getCountry());
             statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
-        return null;
+        return toSave;
     }
 
     @Override
