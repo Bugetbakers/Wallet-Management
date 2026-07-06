@@ -1,10 +1,10 @@
 package org.example.dao;
 
 import org.example.model.Account;
-import java.lang.reflect.Field;
+import org.example.model.Currency;
 import java.sql.*;
 
-public class AccountDAO extends CrudOperationReflect<Account>{
+public class AccountDAO extends CrudOperationReflect<Account> {
     public AccountDAO(Connection connection){
         super(connection);
     }
@@ -15,19 +15,33 @@ public class AccountDAO extends CrudOperationReflect<Account>{
     }
 
     @Override
-    protected Account mapResultSetToObject(ResultSet resultSet) throws SQLException, IllegalAccessException{
-        Account account= new Account();
-        Field[] fields= account.getClass().getDeclaredFields();
-        for(Field field : fields){
-            field.setAccessible(true);
-            field.set(account, resultSet.getObject(field.getName()));
+    protected Account mapResultSetToObject(ResultSet resultSet) throws SQLException {
+        Account account = new Account();
+        account.setId(resultSet.getInt("id"));
+        account.setName(resultSet.getString("name"));
+        account.setBalance(resultSet.getDouble("balance"));
+
+        int currencyId = resultSet.getInt("currency");
+        if (!resultSet.wasNull()) {
+            Currency currency = new Currency();
+            currency.setId(currencyId);
+            account.setCurrency(currency);
+        }
+
+        String typeStr = resultSet.getString("type");
+        if (typeStr != null) {
+            try {
+                account.setType(Account.AccountType.valueOf(typeStr));
+            } catch (IllegalArgumentException e) {
+                // Try to handle case differences or fallback
+            }
         }
         return account;
     }
 
     @Override
     protected String getInsertColumns() {
-        return "(id, name, id_currency, code, balance, balance_date, type)";
+        return "(id, name, balance, currency, type)";
     }
 
     @Override
@@ -36,8 +50,19 @@ public class AccountDAO extends CrudOperationReflect<Account>{
     }
 
     @Override
-    protected void setPreparedStatementParameters(PreparedStatement preparedStatement, Account object) throws SQLException{
+    protected void setPreparedStatementParameters(PreparedStatement preparedStatement, Account object) throws SQLException {
         preparedStatement.setInt(1, object.getId());
-
+        preparedStatement.setString(2, object.getName());
+        preparedStatement.setDouble(3, object.getBalance());
+        if (object.getCurrency() != null) {
+            preparedStatement.setInt(4, object.getCurrency().getId());
+        } else {
+            preparedStatement.setNull(4, Types.INTEGER);
+        }
+        if (object.getType() != null) {
+            preparedStatement.setString(5, object.getType().name());
+        } else {
+            preparedStatement.setNull(5, Types.VARCHAR);
+        }
     }
 }
