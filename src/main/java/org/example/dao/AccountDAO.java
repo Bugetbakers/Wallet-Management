@@ -4,7 +4,6 @@ import org.example.model.Account;
 import org.example.model.Currency;
 import org.example.model.Transaction;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AccountDAO implements CrudOperation<Account>{
-    private Connection connection;  
+    private Connection connection;
     public AccountDAO(Connection connection) {
         this.connection = connection;
     }
@@ -38,48 +37,34 @@ public class AccountDAO implements CrudOperation<Account>{
             statement.setInt(1, accountId);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                return new Account(
-                        resultSet.getInt("id"),
-                        resultSet.getString("name"),
-                        resultSet.getDouble("balance"),
-                        List.of(new Transaction()),
-                        new Currency(
-                                resultSet.getInt("id"),
-                                resultSet.getString("code"),
-                                resultSet.getString("name")
-                        ),
-                        Account.AccountType.valueOf(resultSet.getString("type")),
-                        resultSet.getTimestamp("date").toLocalDateTime()
-                );
+                Account account = new Account();
+                account.setId(resultSet.getInt("id"));
+                account.setName(resultSet.getString("name"));
+                account.setBalance(resultSet.getDouble("balance"));
+                account.setType(Account.AccountType.valueOf(resultSet.getString("type")));
+                return account;
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return null;
     }
 
     public List<Transaction> getTransactionsForAccount(int accountId) {
         List<Transaction> transactions = new ArrayList<>();
-        String sql = "SELECT * FROM transaction WHERE account_id = ?";
+        String sql = "SELECT * FROM transactions WHERE id_account = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountId);
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
-
-                int transactionId = resultSet.getInt("id");
-                String label = resultSet.getString("label");
-                double amount = resultSet.getDouble("amount");
-                java.sql.Date date = resultSet.getDate("date");
-                String type = resultSet.getString("type");
-                int category = resultSet.getInt("category");
-                if (Transaction.TransactionType.DEBIT.toString() == type) {
-                    Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.DEBIT, category);
-                    transactions.add(transaction);
-                } else {
-                    Transaction transaction = new Transaction(transactionId, label, amount, date, Transaction.TransactionType.CREDIT, category);
-                    transactions.add(transaction);
-                }
-
+                Transaction transaction = new Transaction();
+                transaction.setId(resultSet.getInt("id"));
+                transaction.setLabel(resultSet.getString("label"));
+                transaction.setAmount(resultSet.getDouble("amount"));
+                transaction.setDate(resultSet.getTimestamp("date"));
+                transaction.setType(Transaction.TransactionType.valueOf(resultSet.getString("transactionType")));
+                transaction.setCategory(resultSet.getInt("id_category"));
+                transactions.add(transaction);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -92,10 +77,13 @@ public class AccountDAO implements CrudOperation<Account>{
     public List<Account> saveAll(List<Account> toSave) {
         try {
             connection.setAutoCommit(false);
-            String sql = "INSERT INTO account (id, name, balance, currency, type) VALUES (?,?,?,?,?);";
+            String sql = "INSERT INTO account (name, balance, currency, type) VALUES (?,?,?,?);";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 for (Account account : toSave) {
-                    setPreparedStatementParams(statement, account);
+                    statement.setString(1, account.getName());
+                    statement.setDouble(2, account.getBalance());
+                    statement.setInt(3, account.getCurrency() != null ? account.getCurrency().getId() : 0);
+                    statement.setString(4, account.getType().name());
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -112,35 +100,23 @@ public class AccountDAO implements CrudOperation<Account>{
         return toSave;
     }
 
-    private void setPreparedStatementParams(PreparedStatement statement, Account account) {
-        try {
-            Field[] fields = Account.class.getDeclaredFields();
-            for (int i = 0; i < fields.length; i++) {
-                Field field = fields[i];
-                field.setAccessible(true);
-                Object value = field.get(account);
-                statement.setObject(i + 1, value);
-            }
-        } catch (SQLException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public Account save(Account toSave) {
-        String sql = "INSERT INTO account (id, name, balance, currency, password) VALUES (?,?,?,?,?);";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, toSave.getId());
-            statement.setString(2, toSave.getName());
-            statement.setString(4, String.valueOf(toSave.getCurrency()));
-            statement.setString(5, toSave.getTransactions().toString());
-            statement.setString(5, String.valueOf(toSave.getType()));
-
+        String sql = "INSERT INTO account (name, balance, currency, type) VALUES (?,?,?,?);";
+        try (PreparedStatement statement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, toSave.getName());
+            statement.setDouble(2, toSave.getBalance());
+            statement.setInt(3, toSave.getCurrency() != null ? toSave.getCurrency().getId() : 0);
+            statement.setString(4, toSave.getType().name());
             statement.executeUpdate();
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                toSave.setId(generatedKeys.getInt(1));
+            }
+            return toSave;
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
     @Override
