@@ -2,19 +2,17 @@ package org.example.dao;
 
 import org.example.model.Transaction;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class TransactionDAO implements CrudOperation<Transaction>{
+public class TransactionDAO implements CrudOperation<Transaction> {
     private Connection connection;
     public TransactionDAO(Connection connection) {
         this.connection = connection;
     }
+
     @Override
     public List<Transaction> findAll() throws SQLException {
         List<Transaction> transactions = new ArrayList<>();
@@ -26,17 +24,18 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 int id = resultSet.getInt("id");
                 String label = resultSet.getString("label");
                 double amount = resultSet.getDouble("amount");
-                Date date = resultSet.getDate("date");
-                String type = resultSet.getString("type");
-                int category = resultSet.getInt("category");
+                Date date = resultSet.getTimestamp("date");
+                String type = resultSet.getString("transactionType");
+                int category = resultSet.getInt("id_category");
 
-                if (Transaction.TransactionType.CREDIT.toString() == type) {
-                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.CREDIT, category);
-                    transactions.add(transaction);
+                Transaction.TransactionType transactionType;
+                if (Transaction.TransactionType.CREDIT.name().equalsIgnoreCase(type)) {
+                    transactionType = Transaction.TransactionType.CREDIT;
                 } else {
-                    Transaction transaction = new Transaction(id, label, amount, date, Transaction.TransactionType.DEBIT, category);
-                    transactions.add(transaction);
+                    transactionType = Transaction.TransactionType.DEBIT;
                 }
+                Transaction transaction = new Transaction(id, label, amount, date, transactionType, category);
+                transactions.add(transaction);
             }
         }
         return transactions;
@@ -46,61 +45,71 @@ public class TransactionDAO implements CrudOperation<Transaction>{
         if (transaction.getCategory() == 0) {
             throw new IllegalArgumentException("The category is required for a transaction !");
         }
-        String sql = "INSERT INTO transaction (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO transactions (label, amount, date, transactionType, id_category) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, transaction.getLabel());
             statement.setDouble(2, transaction.getAmount());
-            statement.setDate(3, (java.sql.Date) transaction.getDate());
-            statement.setString(4, transaction.getType().name());
+            statement.setTimestamp(3, transaction.getDate() != null ? new Timestamp(transaction.getDate().getTime()) : null);
+            statement.setString(4, transaction.getType() != null ? transaction.getType().name() : "DEBIT");
             statement.setInt(5, transaction.getCategory());
 
             statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public List<Transaction> saveAll(List<Transaction> toSave) {
         List<Transaction> savedTransactions = new ArrayList<>();
-        String query = "INSERT INTO transactions (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO transactions (label, amount, date, transactionType, id_category) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
+        try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             for (Transaction transaction : toSave) {
                 statement.setString(1, transaction.getLabel());
                 statement.setDouble(2, transaction.getAmount());
-                statement.setDate(3, (java.sql.Date) transaction.getDate());
-                statement.setString(4, transaction.getType().name());
+                statement.setTimestamp(3, transaction.getDate() != null ? new Timestamp(transaction.getDate().getTime()) : null);
+                statement.setString(4, transaction.getType() != null ? transaction.getType().name() : "DEBIT");
                 statement.setInt(5, transaction.getCategory());
 
                 int rowsAffected = statement.executeUpdate();
                 if (rowsAffected > 0) {
+                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            transaction.setId(generatedKeys.getInt(1));
+                        }
+                    }
                     savedTransactions.add(transaction);
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return savedTransactions;
     }
 
     @Override
     public Transaction save(Transaction toSave) {
-        String query = "INSERT INTO transactions (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO transactions (label, amount, date, transactionType, id_category) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, toSave.getId());
-            statement.setString(2, toSave.getLabel());
-            statement.setDouble(4, toSave.getAmount());
-            statement.setDate(5, (java.sql.Date) toSave.getDate());
-            statement.setString(6, String.valueOf(toSave.getType()));
+        try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, toSave.getLabel());
+            statement.setDouble(2, toSave.getAmount());
+            statement.setTimestamp(3, toSave.getDate() != null ? new Timestamp(toSave.getDate().getTime()) : null);
+            statement.setString(4, toSave.getType() != null ? toSave.getType().name() : "DEBIT");
+            statement.setInt(5, toSave.getCategory());
 
             int rowsAffected = statement.executeUpdate();
             if (rowsAffected > 0) {
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        toSave.setId(generatedKeys.getInt(1));
+                    }
+                }
                 return toSave;
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return null;
     }
@@ -115,7 +124,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 return toDelete;
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return null;
     }
