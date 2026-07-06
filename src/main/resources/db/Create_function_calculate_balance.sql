@@ -1,35 +1,27 @@
-CREATE FUNCTION calculate_balance(
-    account_id INT,
-    start_date_time DATETIME,
-    end_date_time DATETIME
+CREATE OR REPLACE FUNCTION calculate_balance(
+    p_account_id INT,
+    p_start_date TIMESTAMP,
+    p_end_date TIMESTAMP
 )
-    RETURNS DECIMAL(10, 2)
+RETURNS DECIMAL(15, 2) AS $$
+DECLARE
+    v_total DECIMAL(15, 2);
 BEGIN
-    DECLARE total DECIMAL(10, 2);
+    SELECT COALESCE(SUM(
+        CASE
+            WHEN transactionType = 'CREDIT' THEN amount
+            WHEN transactionType = 'DEBIT' THEN -amount
+            ELSE 0
+        END
+    ), 0.00) INTO v_total
+    FROM transactions
+    WHERE id_account = p_account_id
+      AND date >= p_start_date
+      AND date <= p_end_date;
 
-SELECT SUM(
-               CASE
-                   WHEN amount >= 0 THEN amount
-                   ELSE 0
-                   END
-       ) INTO total
-FROM transactions
-WHERE account_id = account_id
-  AND date >= start_date_time
-  AND date <= end_date_time;
-
-SELECT SUM(
-               CASE
-                   WHEN amount < 0 THEN amount
-                   ELSE 0
-                   END
-       ) INTO total
-FROM transactions
-WHERE account_id = account_id
-  AND date >= start_date_time
-  AND date <= end_date_time;
-
-RETURN total;
+    RETURN v_total;
 END;
+$$ LANGUAGE plpgsql;
 
-SELECT calculate_balance(1, '2023-01-01 00:00:00', '2023-12-31 23:59:59') AS balance;
+-- Exemple d'appel :
+-- SELECT calculate_balance(1, '2023-01-01 00:00:00', '2023-12-31 23:59:59') AS balance;
