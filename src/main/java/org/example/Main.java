@@ -1,30 +1,17 @@
 package org.example;
 
+import org.example.config.ConnectionFactory;
+
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 
 public class Main {
-    private static Connection connection;
-    public static Connection getConnection() {
-        if (connection == null) {
-            try {
-                String url = System.getenv("url");
-                String userName = System.getenv("username");
-                String password = System.getenv("password");
-                if (url == null || userName == null || password == null) {
-                    throw new IllegalStateException("Please define the url, username and password in the environment variable");
-                }
-                connection = DriverManager.getConnection(url, userName, password);
-                System.out.println("Connection Successfully !");
-            } catch (SQLException e) {
-                throw new RuntimeException();
-            }
-        }
-        return connection;
-    }
     public static void main(String[] args) {
-        System.out.println("Connected");
-        getConnection();
+        try (Connection connection = ConnectionFactory.getConnection()) {
+            System.out.println("Connected successfully!");
+        } catch (Exception e) {
+            System.err.println("Failed to connect: " + e.getMessage());
+        } finally {
+            ConnectionFactory.shutdown();
+        }
     }
 }
