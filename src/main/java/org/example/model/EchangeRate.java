@@ -9,11 +9,11 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class EchangeRate {
     private int id;
-    private String SourceCurrency;
-    private String DestinationCurrency;
-    private double Value;
-    private Date ChangeDateTime;
-
+    private String sourceCurrency;
+    private String destinationCurrency;
+    private double value;
+    private Date changeDateTime;
 }
