@@ -23,19 +23,23 @@ public class Account {
     private AccountType type;
 
     public enum AccountType {
-        Bank, Cash, MobilMoney
+        Bank, Cash, MobileMoney
     }
 
     public Account performTransaction(double amount, String description, Transaction.TransactionType transactionType) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Transaction amount must be positive");
+        }
         if (transactionType == Transaction.TransactionType.DEBIT && amount > balance) {
             throw new IllegalArgumentException("Insufficient funds for debit transaction");
         }
 
         Transaction transaction = new Transaction();
-        transaction.setId(id);
+        transaction.setId(0); // Will be set by database or remains 0 for local instances
         transaction.setLabel(description);
         transaction.setAmount(amount);
         transaction.setDate(new Date());
+        transaction.setType(transactionType);
 
         if (transactionType == Transaction.TransactionType.CREDIT) {
             balance += amount;
@@ -47,23 +51,26 @@ public class Account {
         return this;
     }
 
+    public double getBalanceAtDateTime(Date targetDate) {
+        double currentBalance = 0.0;
+        for (Transaction transaction : transactions) {
+            Date transactionDate = transaction.getDate();
+            if (transactionDate != null && !transactionDate.after(targetDate)) {
+                if (transaction.getType() == Transaction.TransactionType.CREDIT) {
+                    currentBalance += transaction.getAmount();
+                } else if (transaction.getType() == Transaction.TransactionType.DEBIT) {
+                    currentBalance -= transaction.getAmount();
+                }
+            }
+        }
+        return currentBalance;
+    }
+
     public double getBalanceAtDateTime(String dateTime) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mma");
         try {
             Date targetDate = dateFormat.parse(dateTime);
-            double balance = 0.0;
-            for (Transaction transaction : transactions) {
-                Date transactionDate = dateFormat.parse(String.valueOf(transaction.getDate()));
-
-                if (!transactionDate.after(targetDate)) {
-                    if (transaction.getType() == Transaction.TransactionType.CREDIT) {
-                        balance += transaction.getAmount();
-                    } else {
-                        balance -= transaction.getAmount();
-                    }
-                }
-            }
-            return balance;
+            return getBalanceAtDateTime(targetDate);
         } catch (ParseException e) {
             throw new IllegalArgumentException("Format date invalid : " + e.getMessage());
         }
@@ -78,14 +85,10 @@ public class Account {
 
             return transactions.stream()
                     .filter(transaction -> {
-                        try {
-                            Date transactionDate = dateFormat.parse(String.valueOf(transaction.getDate()));
-                            return !transactionDate.before(startDate) && !transactionDate.after(endDate);
-                        } catch (ParseException e) {
-                            throw new IllegalArgumentException("Date invalid : " + e.getMessage());
-                        }
+                        Date transactionDate = transaction.getDate();
+                        return transactionDate != null && !transactionDate.before(startDate) && !transactionDate.after(endDate);
                     })
-                    .map(transaction -> getBalanceAtDateTime(String.valueOf(transaction.getDate())))
+                    .map(transaction -> getBalanceAtDateTime(transaction.getDate()))
                     .collect(Collectors.toList());
 
         } catch (ParseException e) {
@@ -96,49 +99,44 @@ public class Account {
     public void transferMoney(Account recipientAccount, double amount) {
         if (this.equals(recipientAccount)) {
             throw new IllegalArgumentException("Unable to transfer money to the same account.");
-        } if (amount > balance) {
-            throw new IllegalArgumentException("Insufficient balance to effect transfer.");
         }
-
-        double newSourceBalance = balance - amount;
-        double newRecipientBalance = recipientAccount.balance + amount;
-
-        this.balance = newSourceBalance;
-        recipientAccount.balance = newRecipientBalance;
-
-        this.performTransaction(-amount, "Transferring to " + recipientAccount.getName(), Transaction.TransactionType.DEBIT);
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+        
+        // performTransaction will validate balance, update balance, and add transaction details
+        this.performTransaction(amount, "Transferring to " + recipientAccount.getName(), Transaction.TransactionType.DEBIT);
         recipientAccount.performTransaction(amount, "Transferring from " + this.getName(), Transaction.TransactionType.CREDIT);
     }
 
     public void transferMoneyWithHistory(Account recipientAccount, double amount) {
         if (this.equals(recipientAccount)) {
             throw new IllegalArgumentException("Unable to transfer money to the same account.");
-        } if (amount > balance) {
-            throw new IllegalArgumentException("Insufficient balance to effect transfer.");
+        }
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
         }
 
-        double newSourceBalance = balance - amount;
-        double newRecipientBalance = recipientAccount.balance + amount;
-
-        this.balance = newSourceBalance;
-        recipientAccount.balance = newRecipientBalance;
-
-        this.performTransaction(-amount, "Transferring to " + recipientAccount.getName(), Transaction.TransactionType.DEBIT);
+        this.performTransaction(amount, "Transferring to " + recipientAccount.getName(), Transaction.TransactionType.DEBIT);
         recipientAccount.performTransaction(amount, "Transferring from " + this.getName(), Transaction.TransactionType.CREDIT);
 
         TransferHistory transferHistory = new TransferHistory();
-        transferHistory.setDebitTransactionId(this.transactions.get(this.transactions.size() - 1).getId());
-        transferHistory.setCreditTransactionId(recipientAccount.transactions.get(recipientAccount.transactions.size() - 1).getId());
+        if (!this.transactions.isEmpty()) {
+            transferHistory.setDebitTransactionId(this.transactions.get(this.transactions.size() - 1).getId());
+        }
+        if (!recipientAccount.transactions.isEmpty()) {
+            transferHistory.setCreditTransactionId(recipientAccount.transactions.get(recipientAccount.transactions.size() - 1).getId());
+        }
+        transferHistory.setAmount(amount);
         transferHistory.setTransferDate(new Date());
     }
-
 
     public LocalDateTime getCurrentDateTime() {
         return LocalDateTime.now();
     }
 
     LocalDateTime currentDateTime = getCurrentDateTime();
-    public void met() {
+    public void printCurrentDateTime() {
         System.out.println("Date et heure actuelles : " + currentDateTime);
     }
 }
