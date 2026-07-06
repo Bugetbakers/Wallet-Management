@@ -11,4 +11,5 @@ public class Currency {
     private int id;
     private String code;
     private String name;
+    private String country;
 }
