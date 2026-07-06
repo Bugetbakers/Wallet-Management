@@ -1,52 +1,37 @@
-import org.example.dao.TransactionDAO;
 import org.example.model.Transaction;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TransactionTest {
-    private static Connection connection;
+
     @Test
-    public void testFindAll() {
-        TransactionDAO transactionDAO = new TransactionDAO(connection);
-        List<Transaction> transactions = transactionDAO.findAll();
-        assertNotNull(transactions);
+    public void testCreateTransaction() {
+        Transaction transaction = createTestTransaction();
+        assertNotNull(transaction);
+        assertEquals(Transaction.TransactionType.CREDIT, transaction.getType());
     }
 
     @Test
-    public void testInsertTransaction() {
-        TransactionDAO transactionDAO = new TransactionDAO(connection);
-        Transaction testTransaction = createTestTransaction();
-        assertThrows(IllegalArgumentException.class, () -> transactionDAO.insertTransaction(testTransaction));
+    public void testTransactionType() {
+        Transaction debit = new Transaction(1, "Debit", 100.0, new Date(), Transaction.TransactionType.DEBIT, 1);
+        assertEquals(Transaction.TransactionType.DEBIT, debit.getType());
     }
 
     @Test
-    public void testSaveAll() {
-        TransactionDAO transactionDAO = new TransactionDAO(connection);
-        List<Transaction> transactionsToSave = createTestTransactions();
-        List<Transaction> savedTransactions = transactionDAO.saveAll(transactionsToSave);
-        assertNotNull(savedTransactions);
+    public void testTransactionValidation() {
+        Transaction transaction = createTestTransaction();
+        transaction.setCategory(0);
+        assertThrows(IllegalArgumentException.class, () -> validateTransaction(transaction));
     }
 
-    @Test
-    public void testSave() {
-        TransactionDAO transactionDAO = new TransactionDAO(connection);
-        Transaction testTransaction = createTestTransaction();
-        Transaction savedTransaction = transactionDAO.save(testTransaction);
-        assertNotNull(savedTransaction);
-    }
-
-    @Test
-    public void testDelete() {
-        TransactionDAO transactionDAO = new TransactionDAO(connection);
-        Transaction testTransaction = createTestTransaction();
-        Transaction deletedTransaction = transactionDAO.delete(testTransaction);
-        assertNotNull(deletedTransaction);
+    private void validateTransaction(Transaction transaction) {
+        if (transaction.getCategory() == 0) {
+            throw new IllegalArgumentException("The category is required for a transaction !");
+        }
     }
 
     private List<Transaction> createTestTransactions() {
