@@ -5,18 +5,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.example.model.EchangeRate;
 import org.example.model.TransferHistory;
 
 public class TransferHistoryDAO {
     private Connection connection;
+
     public TransferHistoryDAO(Connection connection) {
         this.connection = connection;
     }
 
     public List<TransferHistory> getTransfersBeforeDate(int accountId, LocalDateTime date) {
         List<TransferHistory> transfers = new ArrayList<>();
-        String sql = "SELECT * FROM transferHistory WHERE debit_account_id = ? AND transfer_date < ?";
+        String sql = "SELECT * FROM transfer_history WHERE debit_account_id = ? AND transfer_date < ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountId);
             statement.setTimestamp(2, Timestamp.valueOf(date));
@@ -25,19 +25,15 @@ public class TransferHistoryDAO {
             while (resultSet.next()) {
                 transfers.add(new TransferHistory(
                         resultSet.getInt("id"),
-                        resultSet.getInt("debitTransactionId"),
-                        resultSet.getInt("creditTransactionId"),
+                        resultSet.getInt("debit_transaction_id"),
+                        resultSet.getInt("credit_transaction_id"),
                         resultSet.getDouble("amount"),
-                        resultSet.getDate("Date")
+                        resultSet.getTimestamp("transfer_date")
                 ));
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return transfers;
-    }
-
-    public List<TransferHistory> getTransfersBeforeDate(int accountId, List<EchangeRate> date) {
-        return null;
     }
 }
