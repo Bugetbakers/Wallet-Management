@@ -19,7 +19,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
     private TransactionMapper transactionMapper = new TransactionMapper();
 
     @Override
-    public List<Transaction> findAll() throws SQLException {
+    public List<Transaction> findAll() {
         List<Transaction> transactions = new ArrayList<>();
         String query = "SELECT * FROM transactions";
 
@@ -35,63 +35,79 @@ public class TransactionDAO implements CrudOperation<Transaction>{
         if (transaction.getCategory() == 0) {
             throw new IllegalArgumentException("The category is required for a transaction !");
         }
-        String sql = "INSERT INTO transaction (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        String sql = "INSERT INTO transactions (label, amount, date, transactionType, id_category) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, transaction.getLabel());
             statement.setDouble(2, transaction.getAmount());
-            statement.setDate(3, (java.sql.Date) transaction.getDate());
+            statement.setTimestamp(3, new java.sql.Timestamp(transaction.getDate().getTime()));
             statement.setString(4, transaction.getType().name());
             statement.setInt(5, transaction.getCategory());
 
             statement.executeUpdate();
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                transaction.setId(generatedKeys.getInt(1));
+            }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public List<Transaction> saveAll(List<Transaction> toSave) {
-        List<Transaction> savedTransactions = new ArrayList<>();
-        String query = "INSERT INTO transactions (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
+        try {
+            connection.setAutoCommit(false);
+            String query = "INSERT INTO transactions (label, amount, date, transactionType, id_category) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            for (Transaction transaction : toSave) {
-                statement.setString(1, transaction.getLabel());
-                statement.setDouble(2, transaction.getAmount());
-                statement.setDate(3, (java.sql.Date) transaction.getDate());
-                statement.setString(4, transaction.getType().name());
-                statement.setInt(5, transaction.getCategory());
-
-                int rowsAffected = statement.executeUpdate();
-                if (rowsAffected > 0) {
-                    savedTransactions.add(transaction);
+            try (PreparedStatement statement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                for (Transaction transaction : toSave) {
+                    statement.setString(1, transaction.getLabel());
+                    statement.setDouble(2, transaction.getAmount());
+                    statement.setTimestamp(3, new java.sql.Timestamp(transaction.getDate().getTime()));
+                    statement.setString(4, transaction.getType().name());
+                    statement.setInt(5, transaction.getCategory());
+                    statement.addBatch();
                 }
+                statement.executeBatch();
+                ResultSet generatedKeys = statement.getGeneratedKeys();
+                int index = 0;
+                while (generatedKeys.next()) {
+                    toSave.get(index).setId(generatedKeys.getInt(1));
+                    index++;
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
+            } finally {
+                connection.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
-        return savedTransactions;
+        return toSave;
     }
 
     @Override
     public Transaction save(Transaction toSave) {
-        String query = "INSERT INTO transactions (label, amount, date, type, category_id) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO transactions (label, amount, date, transactionType, id_category) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, toSave.getId());
-            statement.setString(2, toSave.getLabel());
-            statement.setDouble(4, toSave.getAmount());
-            statement.setDate(5, (java.sql.Date) toSave.getDate());
-            statement.setString(6, String.valueOf(toSave.getType()));
+        try (PreparedStatement statement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, toSave.getLabel());
+            statement.setDouble(2, toSave.getAmount());
+            statement.setTimestamp(3, new java.sql.Timestamp(toSave.getDate().getTime()));
+            statement.setString(4, toSave.getType().name());
+            statement.setInt(5, toSave.getCategory());
 
-            int rowsAffected = statement.executeUpdate();
-            if (rowsAffected > 0) {
-                return toSave;
+            statement.executeUpdate();
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                toSave.setId(generatedKeys.getInt(1));
             }
+            return toSave;
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
     @Override
@@ -104,7 +120,7 @@ public class TransactionDAO implements CrudOperation<Transaction>{
                 return toDelete;
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return null;
     }
